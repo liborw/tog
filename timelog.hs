@@ -1,5 +1,3 @@
-
-
 import System.Environment
 import Data.Time
 import System.Directory
@@ -11,7 +9,7 @@ dispatch :: [(String, [String] -> IO ())]
 dispatch = [
             ("start", start),
             ("stop", stop),
-            ("report", report)
+            ("status", status)
            ]
 
 main = do
@@ -26,10 +24,11 @@ getDbDir = do
         createDirectoryIfMissing True db
         return db
 
-getDbFile :: String -> IO FilePath
-getDbFile p = do
+getDbFile :: Bool -> String -> IO FilePath
+getDbFile a p = do
     db <- getDbDir
-    return $ db ++ "/" ++ p
+    if a then return $ db ++ "/_" ++ p
+    else return $ db ++ "/" ++ p
 
 start :: [String] -> IO ()
 start [project] = do
@@ -37,7 +36,7 @@ start [project] = do
     case w of
         Nothing     -> do
             time <- getZonedTime
-            file <- getDbFile $ "_" ++ project
+            file <- getDbFile True project
             putStrLn $ "Work on project " ++ project ++ " started at " ++ show time
             writeFile file $ (show $ Running time) ++ "\n"
         Just open   -> do
@@ -48,8 +47,8 @@ stop [note] = do
     w <- working
     case w of
         Just open   -> do
-            inFile  <- getDbFile $ "_" ++ open
-            outFile <- getDbFile open
+            inFile  <- getDbFile True open
+            outFile <- getDbFile False open
             content <- parseFile inFile
             time    <- getZonedTime
             let (active:_)      = content
@@ -58,6 +57,7 @@ stop [note] = do
                     appendFile outFile $ (show updated) ++ "\n"
             removeFile inFile
         Nothing     -> putStrLn $ "Working on nothing"
+stop [] = stop [""]
 
 
 parseFile :: FilePath -> IO [Activity]
@@ -65,13 +65,26 @@ parseFile f = do
     content <- readFile f
     return $ map read (lines content)
 
+status :: [String] -> IO ()
+status _ = do
+    wa <- getWorkingActivity
+    case wa of
+        Just (p,a)  -> do
+            time <- getZonedTime
+            let Running from = a
+                duration     = diffZonedTime time from in
+                    putStrLn $ "You are working on " ++ p ++ " for " ++ show duration
+        Nothing     -> putStrLn "You are lazy bastard!"
 
-report :: [String] -> IO ()
-report _ = do
+getWorkingActivity :: IO (Maybe (String, Activity))
+getWorkingActivity = do
     w <- working
     case w of
-        Just open   -> putStrLn $ "Working on " ++ open
-        Nothing     -> putStrLn $ "Working on nothing"
+        Just open   -> do
+            filePath <- getDbFile True open
+            content <- parseFile filePath
+            return $ Just (open, head content)
+        Nothing     -> return Nothing
 
 working :: IO (Maybe String)
 working = do
@@ -80,4 +93,8 @@ working = do
     let started = filter (\x -> (head x) == '_') content in
         if started == [] then return Nothing
         else return $ Just (tail $ head started)
+
+diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
+diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
+
 
