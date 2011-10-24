@@ -1,5 +1,9 @@
 # timelog: Command line time tracking made simple
 
+## Requirements
+
+  - time
+
 ## Summary
 
 ```
