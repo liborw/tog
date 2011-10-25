@@ -33,8 +33,9 @@ getDbDir = do
 getDbFile :: Bool -> String -> IO FilePath
 getDbFile a p = do
     db <- getDbDir
-    if a then return $ db ++ "/_" ++ p
-    else return $ db ++ "/" ++ p
+    if a
+        then return $ db ++ "/_" ++ p
+        else return $ db ++ "/" ++ p
 
 report :: [String] -> IO ()
 report [] = do
@@ -139,8 +140,9 @@ working = do
     db <- getDbDir
     content <- getDirectoryContents db
     let started = filter (\x -> (head x) == '_') content in
-        if started == [] then return Nothing
-        else return $ Just (tail $ head started)
+        if started == []
+            then return Nothing
+            else return $ Just (tail $ head started)
 
 diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
 diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
