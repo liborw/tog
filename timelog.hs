@@ -3,13 +3,16 @@ import Data.Time
 import System.Directory
 import System.IO
 
-data Activity = Finished ZonedTime ZonedTime String | Running ZonedTime deriving (Show, Read)
+data Activity = Finished ZonedTime ZonedTime String |
+                Running ZonedTime |
+                Log Float String deriving (Show, Read)
 
 dispatch :: [(String, [String] -> IO ())]
 dispatch = [
             ("start", start),
             ("stop", stop),
-            ("status", status)
+            ("status", status),
+            ("log", log')
            ]
 
 main = do
@@ -30,6 +33,12 @@ getDbFile a p = do
     if a then return $ db ++ "/_" ++ p
     else return $ db ++ "/" ++ p
 
+log' :: [String] -> IO ()
+log' [project, time, note] = do
+    logActivity project (Log time note)
+    putStrLn $ "Logged " ++ time ++ " h to project " ++ project
+log' [project, time] = log' [project, time, ""]
+
 start :: [String] -> IO ()
 start [project] = do
     w <- working
@@ -41,6 +50,11 @@ start [project] = do
             writeFile file $ (show $ Running time) ++ "\n"
         Just open   -> do
             putStrLn $ "Focus! you are allready working on " ++ open
+
+logActivity :: String -> Activity -> IO ()
+logActivity p a = do
+    fileName <- getDbFile False p
+    appendFile fileName $ (show a) ++ "\n"
 
 stop :: [String] -> IO ()
 stop [note] = do
@@ -96,5 +110,4 @@ working = do
 
 diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
 diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
-
 
