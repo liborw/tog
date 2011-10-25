@@ -14,6 +14,7 @@ $ timelog status
 ## Data storage
 
 ## TODOs (in no specific order):
+  - Bash completion
   - Some nice exports
   - It would be nice to connect it to git-flow
   - External commands (just to try)
