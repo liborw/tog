@@ -44,7 +44,7 @@ report [] = do
 
 reportAux (x:xs) = do
     total <- getTotal x
-    putStrLn $ x ++ "    " ++ (show total)
+    putStrLn $ x ++ "    " ++ (show total) ++ " h"
 
 getTotal :: String -> IO Float
 getTotal p = do
@@ -57,7 +57,6 @@ total (x:xs) = duration + (total xs)
     where duration = case x of
                         Finished from to _  -> diffTimeToHours (diffZonedTime to from)
                         Log d _             -> d
-
 
 log' :: [String] -> IO ()
 log' [project, time, note] = do
