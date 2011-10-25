@@ -16,6 +16,8 @@ The data are stored in plain-text files and can be manually edited. The storage 
 
 ## TODOs (in no specific order):
   - Bash completion
+  - To be able to log activity
+  - Pretty printing 
   - Some nice exports
   - It would be nice to connect it to git-flow
   - External commands (just to try)
