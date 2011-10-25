@@ -2,7 +2,6 @@ import System.Environment
 import Data.Time
 import System.Directory
 import System.IO
-import Text.Printf
 
 
 data Activity = Finished ZonedTime ZonedTime String |
@@ -41,12 +40,12 @@ report :: [String] -> IO ()
 report [] = do
     db <- getDbDir
     content <- getDirectoryContents db
-    let filtered = filter (\x -> elem (head x)  ['a'..'z']) content in
+    let filtered = filter (\x -> head x `elem` ['a'..'z']) content in
         reportAux filtered
 
 reportAux (x:xs) = do
     total <- getTotal x
-    putStrLn $ x ++ "    " ++ (show total) ++ " h"
+    putStrLn $ x ++ "    " ++ show total ++ " h"
     reportAux xs
 reportAux [] = return ()
 
@@ -57,7 +56,7 @@ getTotal p = do
 
 total :: [Activity] -> Float
 total [] = 0.0
-total (x:xs) = duration + (total xs)
+total (x:xs) = duration + total xs
     where duration = case x of
                         Finished from to _  -> diffTimeToHours (diffZonedTime to from)
                         Log d _             -> d
@@ -76,14 +75,14 @@ start [project] = do
             time <- getZonedTime
             file <- getDbFile True project
             putStrLn $ "Work on project " ++ project ++ " started at " ++ show time
-            writeFile file $ (show $ Running time) ++ "\n"
-        Just open   -> do
+            writeFile file $ show (Running time) ++ "\n"
+        Just open   ->
             putStrLn $ "Focus! you are allready working on " ++ open
 
 logActivity :: String -> Activity -> IO ()
 logActivity p a = do
     fileName <- getDbFile False p
-    appendFile fileName $ (show a) ++ "\n"
+    appendFile fileName $ show a ++ "\n"
 
 stop :: [String] -> IO ()
 stop [note] = do
@@ -97,9 +96,9 @@ stop [note] = do
             let (active:_)      = content
                 Running from    = active
                 updated         = (Finished from time note) in
-                    appendFile outFile $ (show updated) ++ "\n"
+                    appendFile outFile $ show updated ++ "\n"
             removeFile inFile
-        Nothing     -> putStrLn $ "Working on nothing"
+        Nothing     -> putStrLn "Working on nothing"
 stop [] = stop [""]
 
 
@@ -139,7 +138,7 @@ working :: IO (Maybe String)
 working = do
     db <- getDbDir
     content <- getDirectoryContents db
-    let started = filter (\x -> (head x) == '_') content in
+    let started = filter (\x -> head x == '_') content in
         if started == []
             then return Nothing
             else return $ Just (tail $ head started)
@@ -148,5 +147,5 @@ diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
 diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
 
 diffTimeToHours :: NominalDiffTime -> Float
-diffTimeToHours a = (realToFrac a) / 3600
+diffTimeToHours a = realToFrac a / 3600
 
