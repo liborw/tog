@@ -32,6 +32,11 @@ This project is inspired by command line wrapper for [basecamp][basecamp-link] y
 
 ## Changelog
 
+**0.3**:
+
+  - Renamed to Tog: The time log
+  - Use cabal build system
+
 **0.2**:
 
   - Log past work
