@@ -5,7 +5,7 @@ import System.IO
 
 data Activity = Finished ZonedTime ZonedTime String |
                 Running ZonedTime |
-                Log Float deriving (Show, Read)
+                Log Float String deriving (Show, Read)
 
 dispatch :: [(String, [String] -> IO ())]
 dispatch = [
@@ -34,10 +34,10 @@ getDbFile a p = do
     else return $ db ++ "/" ++ p
 
 log' :: [String] -> IO ()
-log' [project, time] = do
-    fileName <- getDbFile False project
-    appendFile fileName $ (show (Log (read time))) ++ "\n"
+log' [project, time, note] = do
+    logActivity project (Log time note)
     putStrLn $ "Logged " ++ time ++ " h to project " ++ project
+log' [project, time] = log' [project, time, ""]
 
 start :: [String] -> IO ()
 start [project] = do
@@ -50,6 +50,11 @@ start [project] = do
             writeFile file $ (show $ Running time) ++ "\n"
         Just open   -> do
             putStrLn $ "Focus! you are allready working on " ++ open
+
+logActivity :: String -> Activity -> IO ()
+logActivity p a = do
+    fileName <- getDbFile False p
+    appendFile fileName $ (show a) ++ "\n"
 
 stop :: [String] -> IO ()
 stop [note] = do
