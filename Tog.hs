@@ -4,6 +4,7 @@ import System.Directory
 import System.IO
 import Text.Printf
 
+
 data Activity = Finished ZonedTime ZonedTime String |
                 Running ZonedTime |
                 Log Float String deriving (Show, Read)
@@ -25,7 +26,7 @@ main = do
 getDbDir :: IO FilePath
 getDbDir = do
     home <- getHomeDirectory
-    let db = home ++ "/.timelog" in do
+    let db = home ++ "/.tog" in do
         createDirectoryIfMissing True db
         return db
 
