@@ -12,6 +12,7 @@ $ timelog status
 ```
 
 ## Data storage
+The data are stored in plain-text files and can be manually edited. The storage is optimised for speed of atomic actions: start and stop.
 
 ## TODOs (in no specific order):
   - Bash completion
