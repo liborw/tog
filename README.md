@@ -1,4 +1,6 @@
-# timelog: Command line time tracking made simple
+# Tog: The time log
+
+Tog is simple command line time tracking utility. 
 
 ## Requirements
 
@@ -6,9 +8,9 @@
 ## Summary
 
 ```
-$ timelog start thesis
-$ timelog stop "Finished introduction"
-$ timelog status
+$ tog start thesis
+$ tog stop "Finished introduction"
+$ tog status
 ```
 
 ## Data storage
@@ -29,6 +31,11 @@ This project is inspired by command line wrapper for [basecamp][basecamp-link] y
 [basecamper-link]: https://github.com/klondike/basecamper
 
 ## Changelog
+
+**0.3**:
+
+  - Renamed to Tog: The time log
+  - Use cabal build system
 
 **0.2**:
 
