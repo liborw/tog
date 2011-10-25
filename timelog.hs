@@ -12,7 +12,8 @@ dispatch = [
             ("start", start),
             ("stop", stop),
             ("status", status),
-            ("log", log')
+            ("log", log'),
+            ("report", report)
            ]
 
 main = do
@@ -32,6 +33,15 @@ getDbFile a p = do
     db <- getDbDir
     if a then return $ db ++ "/_" ++ p
     else return $ db ++ "/" ++ p
+
+report :: [String] -> IO ()
+report [] = do
+    db <- getDbDir
+    content <- getDirectoryContents db
+    let filtered = filter (\x -> elem (head x)  ['a'..'z']) content in
+        putStr $ unlines filtered
+
+
 
 log' :: [String] -> IO ()
 log' [project, time, note] = do
