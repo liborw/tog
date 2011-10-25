@@ -28,3 +28,8 @@ This project is inspired by command line wrapper for [basecamp][basecamp-link] y
 [basecamp-link]: http://basecamphq.com/
 [basecamper-link]: https://github.com/klondike/basecamper
 
+## Changelog
+
+**0.1**:
+  - First release
+  - start, stop and status commands
