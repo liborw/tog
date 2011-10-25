@@ -45,7 +45,7 @@ report [] = do
 
 log' :: [String] -> IO ()
 log' [project, time, note] = do
-    logActivity project (Log time note)
+    logActivity project (Log (read time) note)
     putStrLn $ "Logged " ++ time ++ " h to project " ++ project
 log' [project, time] = log' [project, time, ""]
 
