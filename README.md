@@ -30,6 +30,11 @@ This project is inspired by command line wrapper for [basecamp][basecamp-link] y
 
 ## Changelog
 
+**0.2**:
+
+  - Log past work
+  - Report of overall activity
+
 **0.1**:
 
   - First release
