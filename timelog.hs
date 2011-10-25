@@ -2,6 +2,7 @@ import System.Environment
 import Data.Time
 import System.Directory
 import System.IO
+import Text.Printf
 
 data Activity = Finished ZonedTime ZonedTime String |
                 Running ZonedTime |
@@ -39,8 +40,23 @@ report [] = do
     db <- getDbDir
     content <- getDirectoryContents db
     let filtered = filter (\x -> elem (head x)  ['a'..'z']) content in
-        putStr $ unlines filtered
+        reportAux filtered
 
+reportAux (x:xs) = do
+    total <- getTotal x
+    putStrLn $ x ++ "    " ++ (show total)
+
+getTotal :: String -> IO Float
+getTotal p = do
+    content     <- getProjectContent p
+    return $ total content
+
+total :: [Activity] -> Float
+total [] = 0.0
+total (x:xs) = duration + (total xs)
+    where duration = case x of
+                        Finished from to _  -> diffTimeToHours (diffZonedTime to from)
+                        Log d _             -> d
 
 
 log' :: [String] -> IO ()
@@ -100,6 +116,12 @@ status _ = do
                     putStrLn $ "You are working on " ++ p ++ " for " ++ show duration
         Nothing     -> putStrLn "You are lazy bastard!"
 
+getProjectContent :: String -> IO [Activity]
+getProjectContent p = do
+    fileName    <- getDbFile False p
+    parseFile fileName
+
+
 getWorkingActivity :: IO (Maybe (String, Activity))
 getWorkingActivity = do
     w <- working
@@ -120,4 +142,7 @@ working = do
 
 diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
 diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
+
+diffTimeToHours :: NominalDiffTime -> Float
+diffTimeToHours a = (realToFrac a) / 3600
 
