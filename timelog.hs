@@ -2,14 +2,19 @@ import System.Environment
 import Data.Time
 import System.Directory
 import System.IO
+import Text.Printf
 
-data Activity = Finished ZonedTime ZonedTime String | Running ZonedTime deriving (Show, Read)
+data Activity = Finished ZonedTime ZonedTime String |
+                Running ZonedTime |
+                Log Float String deriving (Show, Read)
 
 dispatch :: [(String, [String] -> IO ())]
 dispatch = [
             ("start", start),
             ("stop", stop),
-            ("status", status)
+            ("status", status),
+            ("log", log'),
+            ("report", report)
            ]
 
 main = do
@@ -30,6 +35,37 @@ getDbFile a p = do
     if a then return $ db ++ "/_" ++ p
     else return $ db ++ "/" ++ p
 
+report :: [String] -> IO ()
+report [] = do
+    db <- getDbDir
+    content <- getDirectoryContents db
+    let filtered = filter (\x -> elem (head x)  ['a'..'z']) content in
+        reportAux filtered
+
+reportAux (x:xs) = do
+    total <- getTotal x
+    putStrLn $ x ++ "    " ++ (show total) ++ " h"
+    reportAux xs
+reportAux [] = return ()
+
+getTotal :: String -> IO Float
+getTotal p = do
+    content     <- getProjectContent p
+    return $ total content
+
+total :: [Activity] -> Float
+total [] = 0.0
+total (x:xs) = duration + (total xs)
+    where duration = case x of
+                        Finished from to _  -> diffTimeToHours (diffZonedTime to from)
+                        Log d _             -> d
+
+log' :: [String] -> IO ()
+log' [project, time, note] = do
+    logActivity project (Log (read time) note)
+    putStrLn $ "Logged " ++ time ++ " h to project " ++ project
+log' [project, time] = log' [project, time, ""]
+
 start :: [String] -> IO ()
 start [project] = do
     w <- working
@@ -41,6 +77,11 @@ start [project] = do
             writeFile file $ (show $ Running time) ++ "\n"
         Just open   -> do
             putStrLn $ "Focus! you are allready working on " ++ open
+
+logActivity :: String -> Activity -> IO ()
+logActivity p a = do
+    fileName <- getDbFile False p
+    appendFile fileName $ (show a) ++ "\n"
 
 stop :: [String] -> IO ()
 stop [note] = do
@@ -76,6 +117,12 @@ status _ = do
                     putStrLn $ "You are working on " ++ p ++ " for " ++ show duration
         Nothing     -> putStrLn "You are lazy bastard!"
 
+getProjectContent :: String -> IO [Activity]
+getProjectContent p = do
+    fileName    <- getDbFile False p
+    parseFile fileName
+
+
 getWorkingActivity :: IO (Maybe (String, Activity))
 getWorkingActivity = do
     w <- working
@@ -97,4 +144,6 @@ working = do
 diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
 diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
 
+diffTimeToHours :: NominalDiffTime -> Float
+diffTimeToHours a = (realToFrac a) / 3600
 
