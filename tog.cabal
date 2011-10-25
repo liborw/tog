@@ -1,0 +1,13 @@
+Name:               tog
+Version:            0.3
+Description:        Simple command line time tracking utility.
+License:            BSD
+License-file:       LICENSE
+Author:             Libor Wagner
+Maintainer:         liborwagner@centrum.cz
+Build-Type:         Simple
+Cabal-Version:      >=1.2
+
+Executable tog
+    Main-is:        Tog.hs
+    Build-Depends:  base >= 3,directory, time

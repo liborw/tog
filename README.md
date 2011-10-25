@@ -1,4 +1,6 @@
-# timelog: Command line time tracking made simple
+# Tog: The time log
+
+Tog is simple command line time tracking utility. 
 
 ## Requirements
 
@@ -6,9 +8,9 @@
 ## Summary
 
 ```
-$ timelog start thesis
-$ timelog stop "Finished introduction"
-$ timelog status
+$ tog start thesis
+$ tog stop "Finished introduction"
+$ tog status
 ```
 
 ## Data storage
