@@ -3,6 +3,8 @@ import Data.Time
 import System.Directory
 import System.IO
 
+import Report
+
 
 data Activity = Finished ZonedTime ZonedTime String |
                 Running ZonedTime |
@@ -36,8 +38,8 @@ getDbFile a p = do
         then return $ db ++ "/_" ++ p
         else return $ db ++ "/" ++ p
 
-report :: [String] -> IO ()
-report [] = do
+report' :: [String] -> IO ()
+report' [] = do
     db <- getDbDir
     content <- getDirectoryContents db
     let filtered = filter (\x -> head x `elem` ['a'..'z']) content in
