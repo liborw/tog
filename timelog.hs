@@ -45,6 +45,8 @@ report [] = do
 reportAux (x:xs) = do
     total <- getTotal x
     putStrLn $ x ++ "    " ++ (show total) ++ " h"
+    reportAux xs
+reportAux [] = return ()
 
 getTotal :: String -> IO Float
 getTotal p = do
