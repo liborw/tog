@@ -47,3 +47,10 @@ getActiveTask = do
             return $ Just (project, task)
         Nothing         -> return Nothing
 
+getProjectList :: IO [String]
+getProjectList = do
+    dir     <- getStorageDir
+    content <- getDirectoryContents dir
+    let l = filter (\x -> head x `elem` ['a'..'z']) content in
+        return l
+
