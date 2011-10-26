@@ -94,17 +94,10 @@ status [] = do
     r <- getActiveProject
     case r of
         Just p  -> do
-            content <- getActiveProjectContent' p
+            task <- getActiveProjectContent' p
             time <- getZonedTime
-            let Active from  = content
-                duration     = diffZonedTime time from in
-                    putStrLn $ "You are working on " ++ p ++ " for " ++ show duration
+            let d = duration task time in
+                putStrLn $ "You are working on " ++ p ++ " for " ++ show d
         Nothing -> putStrLn "You are lazy bastard!"
 status _ = printUsage "status"
-
-diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
-diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
-
-diffTimeToHours :: NominalDiffTime -> Float
-diffTimeToHours a = realToFrac a / 3600
 

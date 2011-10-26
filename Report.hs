@@ -1,12 +1,20 @@
-module Report (report) where
+module Report where
 
 import Storage
 import Text.Printf
+import Data.Time
 
 report :: [String] -> IO ()
 report []  = do
-    projects <- getProjectList
-    putStr $ unlines projects
+    projects    <- getProjectList
+    active      <- getActiveProject
+    case active of
+        Just a  -> do
+            let proj = mark a projects
+            putStr $ unlines proj
+        Nothing -> putStr $ unlines projects
+
+
 
 report [p] = do
     content <- getProjectContent p
@@ -17,6 +25,18 @@ getProjectDuration p = do
     content <- getProjectContent p
     return 0.1
 
+diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
+diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
+
+duration :: Task -> ZonedTime -> Float
+duration (Log d _) _        = d
+duration (Active a) b       = (realToFrac $ diffZonedTime b a) / 3600
+duration (Finished a b _) _ = (realToFrac $ diffZonedTime b a) / 3600
+
+mark s = map aux
+    where aux x = if x == s
+                    then "*" ++ s
+                    else x
 
 -- report' :: [String] -> IO ()
 -- report' [] = do
