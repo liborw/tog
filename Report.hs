@@ -1,8 +1,12 @@
 module Report (report) where
 
+import Storage
+
 report :: [String] -> IO ()
 report a = do
-    putStrLn "This is a new report."
+    projects <- getProjectList
+    putStr $ unlines projects
+
 
 -- report' :: [String] -> IO ()
 -- report' [] = do
