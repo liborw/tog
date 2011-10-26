@@ -26,6 +26,14 @@ usages = [
          ("report", "")
          ]
 
+main = do
+    args <- getArgs
+    case args of
+        []          -> help []
+        (cmd:rest)  ->
+            let (Just action) = lookup cmd dispatch in
+                action args
+
 printUsage :: String -> IO ()
 printUsage cmd = do
     prog <- getProgName
@@ -38,11 +46,6 @@ help _ = do
     putStrLn $ "Usage: " ++ prog ++ " <command> [args]\n"
     putStrLn "Commands:"
     putStr $ unlines $ map (\(x,y) -> "  " ++ unwords [x,y]) usages
-
-main = do
-    (command:args) <- getArgs
-    let (Just action) = lookup command dispatch
-    action args
 
 log' :: [String] -> IO ()
 log' [project, time, note] = do
