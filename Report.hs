@@ -1,11 +1,21 @@
 module Report (report) where
 
 import Storage
+import Text.Printf
 
 report :: [String] -> IO ()
-report a = do
+report []  = do
     projects <- getProjectList
     putStr $ unlines projects
+
+report [p] = do
+    content <- getProjectContent p
+    return ()
+
+getProjectDuration :: String -> IO Float
+getProjectDuration p = do
+    content <- getProjectContent p
+    return 0.1
 
 
 -- report' :: [String] -> IO ()
