@@ -12,7 +12,8 @@ dispatch = [
             ("stop", stop),
             ("status", status),
             ("log", log'),
-            ("report", report)
+            ("report", report),
+            ("help", help)
            ]
 
 
@@ -30,6 +31,13 @@ printUsage cmd = do
     prog <- getProgName
     let (Just usage) = lookup cmd usages in
         putStrLn $ unwords ["Usage:", prog, cmd, usage]
+
+help :: [String] -> IO ()
+help _ = do
+    prog <- getProgName
+    putStrLn $ "Usage: " ++ prog ++ " <command> [args]\n"
+    putStrLn "Commands:"
+    putStr $ unlines $ map (\(x,y) -> "  " ++ unwords [x,y]) usages
 
 main = do
     (command:args) <- getArgs
