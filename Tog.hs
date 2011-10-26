@@ -4,11 +4,7 @@ import System.Directory
 import System.IO
 
 import Report
-
-
-data Activity = Finished ZonedTime ZonedTime String |
-                Running ZonedTime |
-                Log Float String deriving (Show, Read)
+import Storage
 
 dispatch :: [(String, [String] -> IO ())]
 dispatch = [
@@ -24,126 +20,56 @@ main = do
     let (Just action) = lookup command dispatch
     action args
 
-getDbDir :: IO FilePath
-getDbDir = do
-    home <- getHomeDirectory
-    let db = home ++ "/.tog" in do
-        createDirectoryIfMissing True db
-        return db
-
-getDbFile :: Bool -> String -> IO FilePath
-getDbFile a p = do
-    db <- getDbDir
-    if a
-        then return $ db ++ "/_" ++ p
-        else return $ db ++ "/" ++ p
-
-report' :: [String] -> IO ()
-report' [] = do
-    db <- getDbDir
-    content <- getDirectoryContents db
-    let filtered = filter (\x -> head x `elem` ['a'..'z']) content in
-        reportAux filtered
-
-reportAux (x:xs) = do
-    total <- getTotal x
-    putStrLn $ x ++ "    " ++ show total ++ " h"
-    reportAux xs
-reportAux [] = return ()
-
-getTotal :: String -> IO Float
-getTotal p = do
-    content     <- getProjectContent p
-    return $ total content
-
-total :: [Activity] -> Float
-total [] = 0.0
-total (x:xs) = duration + total xs
-    where duration = case x of
-                        Finished from to _  -> diffTimeToHours (diffZonedTime to from)
-                        Log d _             -> d
-
 log' :: [String] -> IO ()
 log' [project, time, note] = do
     logActivity project (Log (read time) note)
     putStrLn $ "Logged " ++ time ++ " h to project " ++ project
 log' [project, time] = log' [project, time, ""]
 
+logActivity :: String -> Task -> IO ()
+logActivity p a = do
+    fileName <- getProjectFile False p
+    appendFile fileName $ show a ++ "\n"
+
 start :: [String] -> IO ()
 start [project] = do
-    w <- working
-    case w of
+    r <- getActiveProject
+    case r of
         Nothing     -> do
             time <- getZonedTime
-            file <- getDbFile True project
+            file <- getProjectFile True project
             putStrLn $ "Work on project " ++ project ++ " started at " ++ show time
-            writeFile file $ show (Running time) ++ "\n"
+            writeFile file $ show (Active time) ++ "\n"
         Just open   ->
             putStrLn $ "Focus! you are allready working on " ++ open
 
-logActivity :: String -> Activity -> IO ()
-logActivity p a = do
-    fileName <- getDbFile False p
-    appendFile fileName $ show a ++ "\n"
-
 stop :: [String] -> IO ()
 stop [note] = do
-    w <- working
-    case w of
-        Just open   -> do
-            inFile  <- getDbFile True open
-            outFile <- getDbFile False open
-            content <- parseFile inFile
-            time    <- getZonedTime
+    r <- getActiveProject
+    case r of
+        Just project -> do
+            inFile   <- getProjectFile True project
+            outFile  <- getProjectFile False project
+            content  <- getProjectContent True project
+            time     <- getZonedTime
             let (active:_)      = content
-                Running from    = active
+                Active from     = active
                 updated         = (Finished from time note) in
                     appendFile outFile $ show updated ++ "\n"
             removeFile inFile
         Nothing     -> putStrLn "Working on nothing"
 stop [] = stop [""]
 
-
-parseFile :: FilePath -> IO [Activity]
-parseFile f = do
-    content <- readFile f
-    return $ map read (lines content)
-
 status :: [String] -> IO ()
 status _ = do
-    wa <- getWorkingActivity
-    case wa of
-        Just (p,a)  -> do
+    r <- getActiveTask
+    case r of
+        Just (project, task) -> do
             time <- getZonedTime
-            let Running from = a
+            let Active from  = task
                 duration     = diffZonedTime time from in
-                    putStrLn $ "You are working on " ++ p ++ " for " ++ show duration
+                    putStrLn $ "You are working on " ++ project ++ " for " ++ show duration
         Nothing     -> putStrLn "You are lazy bastard!"
-
-getProjectContent :: String -> IO [Activity]
-getProjectContent p = do
-    fileName    <- getDbFile False p
-    parseFile fileName
-
-
-getWorkingActivity :: IO (Maybe (String, Activity))
-getWorkingActivity = do
-    w <- working
-    case w of
-        Just open   -> do
-            filePath <- getDbFile True open
-            content <- parseFile filePath
-            return $ Just (open, head content)
-        Nothing     -> return Nothing
-
-working :: IO (Maybe String)
-working = do
-    db <- getDbDir
-    content <- getDirectoryContents db
-    let started = filter (\x -> head x == '_') content in
-        if started == []
-            then return Nothing
-            else return $ Just (tail $ head started)
 
 diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
 diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)

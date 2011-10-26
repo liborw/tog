@@ -1,6 +1,7 @@
 module Storage where
 
 import System.Directory
+import Data.Time
 
 
 data Task = Active ZonedTime |
@@ -8,17 +9,18 @@ data Task = Active ZonedTime |
             Log Float String deriving (Read, Show)
 
 getStorageDir :: IO FilePath
+getStorageDir = do
     home <- getHomeDirectory
-    createDirectoryIfMissing True storageDir
-    return storageDir
-        where storageDir = home ++ "/.tog"
+    let dir = home ++ "/.tog" in do
+        createDirectoryIfMissing True dir
+        return dir
 
 getProjectFile :: Bool -> String -> IO FilePath
 getProjectFile a p = do
     storage <- getStorageDir
     if a
-        then return $ db ++ "/_" ++ p
-        else return $ db ++ "/" ++ p
+        then return $ storage ++ "/_" ++ p
+        else return $ storage ++ "/" ++ p
 
 getActiveProject :: IO (Maybe String)
 getActiveProject = do
@@ -29,18 +31,8 @@ getActiveProject = do
             then return Nothing
             else return $ Just (tail $ head active)
 
-getProjectContent :: String -> IO (Maybe [Task])
-getProjectContent project = do
-    projectFile <- getProjectFile False project
-    fileExist   <- doesFileExist projectFile
-    if fileExist
-        then do
-            content <- readFile projectFile
-            return $ map read (lines content)
-        else return Nothing
-
-getProjectContent' :: Bool -> String -> IO [Task]
-getProjectContent' active project = do
+getProjectContent :: Bool -> String -> IO [Task]
+getProjectContent active project = do
     projectFile <- getProjectFile active project
     fileExist   <- doesFileExist projectFile
     content     <- readFile projectFile
@@ -51,7 +43,7 @@ getActiveTask = do
     active <- getActiveProject
     case active of
         Just project    -> do
-            (task:rest) <- getProjectContent' True project
-            return (project, task)
-        NOthing         -> return Nothing
+            (task:rest) <- getProjectContent True project
+            return $ Just (project, task)
+        Nothing         -> return Nothing
 
