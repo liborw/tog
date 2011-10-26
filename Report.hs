@@ -13,13 +13,23 @@ report []  = do
             let proj = mark a projects
             putStr $ unlines proj
         Nothing -> putStr $ unlines projects
-
 report [p] = do
     content <- getProjectContent p
+    time <- getZonedTime
     return ()
 
-getProjectDuration :: String -> IO Float
-getProjectDuration p = do
+showProjectSummary' :: String -> IO Float
+showProjectSummary' p = do
+    content <- getProjectContent' p
+    active  <- isProjectActive' p
+    time    <- getZonedTime
+    let name    = iif active ("*" ++ p) p
+        total   = sum $ map (duration time) content in do
+            printf "%s      %0.1f h" name total
+            return total
+
+getProjectDuration' :: String -> IO Float
+getProjectDuration' p = do
     content <- getProjectContent p
     return 0.1
 
@@ -31,7 +41,10 @@ duration _ (Log d _)        = d
 duration b (Active a)       = (realToFrac $ diffZonedTime b a) / 3600
 duration _ (Finished a b _) = (realToFrac $ diffZonedTime b a) / 3600
 
-
+iif :: Bool -> a -> a -> a
+iif a b c
+    | a         = b
+    | otherwise = c
 
 mark s = map aux
     where aux x = if x == s
