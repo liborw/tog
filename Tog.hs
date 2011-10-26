@@ -15,6 +15,8 @@ dispatch = [
             ("report", report)
            ]
 
+
+
 main = do
     (command:args) <- getArgs
     let (Just action) = lookup command dispatch
@@ -42,6 +44,9 @@ start [project] = do
             writeFile file $ show (Active time) ++ "\n"
         Just open   ->
             putStrLn $ "Focus! you are allready working on " ++ open
+start [] = do
+    cmd <- getProgName
+    putStrLn $ "Usage: " ++ cmd ++ " start project_name"
 
 stop :: [String] -> IO ()
 stop [note] = do
