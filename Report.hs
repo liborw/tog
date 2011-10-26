@@ -26,10 +26,12 @@ getProjectDuration p = do
 diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
 diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
 
-duration :: Task -> ZonedTime -> Float
-duration (Log d _) _        = d
-duration (Active a) b       = (realToFrac $ diffZonedTime b a) / 3600
-duration (Finished a b _) _ = (realToFrac $ diffZonedTime b a) / 3600
+duration :: ZonedTime -> Task -> Float
+duration _ (Log d _)        = d
+duration b (Active a)       = (realToFrac $ diffZonedTime b a) / 3600
+duration _ (Finished a b _) = (realToFrac $ diffZonedTime b a) / 3600
+
+
 
 mark s = map aux
     where aux x = if x == s

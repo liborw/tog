@@ -29,7 +29,6 @@ usages = [
 
 main = do
     args <- getArgs
-    putStrLn $ show args
     case args of
         []          -> help []
         (cmd:rest)  ->
@@ -97,7 +96,7 @@ status [] = do
         Just p  -> do
             task <- getActiveProjectContent' p
             time <- getZonedTime
-            let d = duration task time in
+            let d = duration time task in
                 printf "You are working on %s for %0.1f h\n" p d
         Nothing -> putStrLn "You are lazy bastard!"
 status _ = printUsage "status"
