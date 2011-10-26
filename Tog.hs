@@ -12,13 +12,40 @@ dispatch = [
             ("stop", stop),
             ("status", status),
             ("log", log'),
-            ("report", report)
+            ("report", report),
+            ("help", help)
            ]
 
+
+usages :: [(String, String)]
+usages = [
+         ("start", "<project>"),
+         ("stop", "[note]"),
+         ("log", "<project> <hours> [note]"),
+         ("status", ""),
+         ("report", "")
+         ]
+
 main = do
-    (command:args) <- getArgs
-    let (Just action) = lookup command dispatch
-    action args
+    args <- getArgs
+    case args of
+        []          -> help []
+        (cmd:rest)  ->
+            let (Just action) = lookup cmd dispatch in
+                action args
+
+printUsage :: String -> IO ()
+printUsage cmd = do
+    prog <- getProgName
+    let (Just usage) = lookup cmd usages in
+        putStrLn $ unwords ["Usage:", prog, cmd, usage]
+
+help :: [String] -> IO ()
+help _ = do
+    prog <- getProgName
+    putStrLn $ "Usage: " ++ prog ++ " <command> [args]\n"
+    putStrLn "Commands:"
+    putStr $ unlines $ map (\(x,y) -> "  " ++ unwords [x,y]) usages
 
 log' :: [String] -> IO ()
 log' [project, time, note] = do
@@ -42,6 +69,7 @@ start [project] = do
             writeFile file $ show (Active time) ++ "\n"
         Just open   ->
             putStrLn $ "Focus! you are allready working on " ++ open
+start _ = printUsage "start"
 
 stop :: [String] -> IO ()
 stop [note] = do
@@ -59,9 +87,10 @@ stop [note] = do
             removeFile inFile
         Nothing     -> putStrLn "Working on nothing"
 stop [] = stop [""]
+stop _  = printUsage "stop"
 
 status :: [String] -> IO ()
-status _ = do
+status [] = do
     r <- getActiveTask
     case r of
         Just (project, task) -> do
@@ -70,6 +99,8 @@ status _ = do
                 duration     = diffZonedTime time from in
                     putStrLn $ "You are working on " ++ project ++ " for " ++ show duration
         Nothing     -> putStrLn "You are lazy bastard!"
+status _ = printUsage "status"
+
 
 diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
 diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
