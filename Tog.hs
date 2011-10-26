@@ -2,6 +2,7 @@ import System.Environment
 import Data.Time
 import System.Directory
 import System.IO
+import Text.Printf
 
 import Report
 import Storage
@@ -97,7 +98,7 @@ status [] = do
             task <- getActiveProjectContent' p
             time <- getZonedTime
             let d = duration task time in
-                putStrLn $ "You are working on " ++ p ++ " for " ++ show d
+                printf "You are working on %s for %0.1f h\n" p d
         Nothing -> putStrLn "You are lazy bastard!"
 status _ = printUsage "status"
 

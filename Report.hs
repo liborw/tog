@@ -14,8 +14,6 @@ report []  = do
             putStr $ unlines proj
         Nothing -> putStr $ unlines projects
 
-
-
 report [p] = do
     content <- getProjectContent p
     return ()
