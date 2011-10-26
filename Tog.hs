@@ -16,6 +16,20 @@ dispatch = [
            ]
 
 
+usages :: [(String, String)]
+usages = [
+         ("start", "<project>"),
+         ("stop", "[note]"),
+         ("log", "<project> <hours> [note]"),
+         ("status", ""),
+         ("report", "")
+         ]
+
+printUsage :: String -> IO ()
+printUsage cmd = do
+    prog <- getProgName
+    let (Just usage) = lookup cmd usages in
+        putStrLn $ unwords ["Usage:", prog, cmd, usage]
 
 main = do
     (command:args) <- getArgs
@@ -44,9 +58,7 @@ start [project] = do
             writeFile file $ show (Active time) ++ "\n"
         Just open   ->
             putStrLn $ "Focus! you are allready working on " ++ open
-start [] = do
-    cmd <- getProgName
-    putStrLn $ "Usage: " ++ cmd ++ " start project_name"
+start _ = printUsage "start"
 
 stop :: [String] -> IO ()
 stop [note] = do
@@ -64,9 +76,10 @@ stop [note] = do
             removeFile inFile
         Nothing     -> putStrLn "Working on nothing"
 stop [] = stop [""]
+stop _  = printUsage "stop"
 
 status :: [String] -> IO ()
-status _ = do
+status [] = do
     r <- getActiveTask
     case r of
         Just (project, task) -> do
@@ -75,6 +88,8 @@ status _ = do
                 duration     = diffZonedTime time from in
                     putStrLn $ "You are working on " ++ project ++ " for " ++ show duration
         Nothing     -> putStrLn "You are lazy bastard!"
+status _ = printUsage "status"
+
 
 diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
 diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
