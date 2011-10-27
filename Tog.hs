@@ -46,9 +46,9 @@ printUsage cmd = do
 
 edit :: [String] -> IO ()
 edit [p]    = do
-    file        <- getProjectFile p
-    exception   <-rawSystem "mvim" [file]
-    putStrLn $ show exception
+    file    <- getProjectFile p
+    editor  <- getEnv "EDITOR"
+    ret     <- rawSystem editor [file]
 edit _      = printUsage "edit"
 
 help :: [String] -> IO ()
