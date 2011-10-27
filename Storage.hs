@@ -6,7 +6,7 @@ import Data.Time
 
 data Task = Active ZonedTime |
             Finished ZonedTime ZonedTime String |
-            Log Float String deriving (Read, Show)
+            Logged Float String deriving (Read, Show)
 
 getStorageDir :: IO FilePath
 getStorageDir = do
@@ -46,16 +46,16 @@ getProjectContent' :: String -> IO [Task]
 getProjectContent' p = do
     file    <- getProjectFile p
     content <- readFile file
-    return $ read $ head $ lines content
+    return $ map read (lines content)
 
-getProjectContent :: String -> IO (Maybe Task)
+getProjectContent :: String -> IO (Maybe [Task])
 getProjectContent p = do
     file        <- getProjectFile p
     fileExist   <- doesFileExist file
     if fileExist
         then do
             content  <- readFile file
-            return (Just (read . head $ lines content))
+            return (Just (map read (lines content)))
         else return Nothing
 
 getActiveProject :: IO (Maybe String)
