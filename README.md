@@ -25,10 +25,12 @@ The data are stored in plain-text files and can be manually edited. The storage 
   - External commands (just to try)
 
 ## Acknowledgement
-This project is inspired by command line wrapper for [basecamp][basecamp-link] you can find [here][basecamper-link]. Also this is my first project in Haskell and is still in development.
+This project is inspired by command line wrapper for [basecamp][basecamp-link] you can find [here][basecamper-link]. The outputs are ispired by [timed][timed-link]. Also this is my first project in Haskell and is still in development.
+
 
 [basecamp-link]: http://basecamphq.com/
 [basecamper-link]: https://github.com/klondike/basecamper
+[timed-link]: http://adeel.github.com/timed/
 
 ## Changelog
 
