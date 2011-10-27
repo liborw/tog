@@ -45,10 +45,11 @@ printUsage cmd = do
         putStrLn $ unwords ["Usage:", prog, cmd, usage]
 
 edit :: [String] -> IO ()
-edit [p] = do
+edit [p]    = do
     file        <- getProjectFile p
     exception   <-rawSystem "mvim" [file]
     putStrLn $ show exception
+edit _      = printUsage "edit"
 
 help :: [String] -> IO ()
 help _ = do
