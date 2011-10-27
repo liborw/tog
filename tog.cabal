@@ -1,7 +1,7 @@
 Name:               tog
-Version:            0.3
+Version:            0.4
 Description:        Simple command line time tracking utility.
-License:            BSD
+License:            BSD2
 License-file:       LICENSE
 Author:             Libor Wagner
 Maintainer:         liborwagner@centrum.cz

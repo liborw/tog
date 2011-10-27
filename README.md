@@ -32,6 +32,13 @@ This project is inspired by command line wrapper for [basecamp][basecamp-link] y
 
 ## Changelog
 
+**0.4**:
+
+  - Bash completion
+  - Nicer report
+  - Edit command for quick peek to storage files
+  - Help and usage info
+
 **0.3**:
 
   - Renamed to Tog: The time log
