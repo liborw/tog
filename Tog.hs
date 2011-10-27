@@ -2,11 +2,12 @@ import System.Environment
 import Data.Time
 import System.Directory
 import System.IO
+import Text.Printf
+import System.Cmd
+import System.Exit
 
-
-data Activity = Finished ZonedTime ZonedTime String |
-                Running ZonedTime |
-                Log Float String deriving (Show, Read)
+import Report
+import Storage
 
 dispatch :: [(String, [String] -> IO ())]
 dispatch = [
@@ -14,138 +15,104 @@ dispatch = [
             ("stop", stop),
             ("status", status),
             ("log", log'),
-            ("report", report)
+            ("report", report),
+            ("help", help),
+            ("edit", edit)
            ]
 
+
+usages :: [(String, String)]
+usages = [
+         ("start", "<project>"),
+         ("stop", "[note]"),
+         ("log", "<project> <hours> [note]"),
+         ("status", ""),
+         ("report", ""),
+         ("edit", "<project>")
+         ]
+
 main = do
-    (command:args) <- getArgs
-    let (Just action) = lookup command dispatch
-    action args
+    args <- getArgs
+    case args of
+        []          -> help []
+        (cmd:rest)  ->
+            let (Just action) = lookup cmd dispatch in
+                action rest
 
-getDbDir :: IO FilePath
-getDbDir = do
-    home <- getHomeDirectory
-    let db = home ++ "/.tog" in do
-        createDirectoryIfMissing True db
-        return db
+printUsage :: String -> IO ()
+printUsage cmd = do
+    prog <- getProgName
+    let (Just usage) = lookup cmd usages in
+        putStrLn $ unwords ["Usage:", prog, cmd, usage]
 
-getDbFile :: Bool -> String -> IO FilePath
-getDbFile a p = do
-    db <- getDbDir
-    if a
-        then return $ db ++ "/_" ++ p
-        else return $ db ++ "/" ++ p
+edit :: [String] -> IO ()
+edit [p]    = do
+    file    <- getProjectFile p
+    editor  <- getEnv "EDITOR"
+    r       <- rawSystem editor [file]
+    case r of
+        ExitSuccess     -> return ()
+        ExitFailure c   -> printf
+            "Command '%s %s' failed with return code %d.\n" editor file c
+edit _      = printUsage "edit"
 
-report :: [String] -> IO ()
-report [] = do
-    db <- getDbDir
-    content <- getDirectoryContents db
-    let filtered = filter (\x -> head x `elem` ['a'..'z']) content in
-        reportAux filtered
-
-reportAux (x:xs) = do
-    total <- getTotal x
-    putStrLn $ x ++ "    " ++ show total ++ " h"
-    reportAux xs
-reportAux [] = return ()
-
-getTotal :: String -> IO Float
-getTotal p = do
-    content     <- getProjectContent p
-    return $ total content
-
-total :: [Activity] -> Float
-total [] = 0.0
-total (x:xs) = duration + total xs
-    where duration = case x of
-                        Finished from to _  -> diffTimeToHours (diffZonedTime to from)
-                        Log d _             -> d
+help :: [String] -> IO ()
+help _ = do
+    prog <- getProgName
+    putStrLn $ "Usage: " ++ prog ++ " <command> [args]\n"
+    putStrLn "Commands:"
+    putStr $ unlines $ map (\(x,y) -> "  " ++ unwords [x,y]) usages
 
 log' :: [String] -> IO ()
 log' [project, time, note] = do
-    logActivity project (Log (read time) note)
+    logActivity project (Logged (read time) note)
     putStrLn $ "Logged " ++ time ++ " h to project " ++ project
 log' [project, time] = log' [project, time, ""]
 
+logActivity :: String -> Task -> IO ()
+logActivity p a = do
+    fileName <- getProjectFile p
+    appendFile fileName $ show a ++ "\n"
+
 start :: [String] -> IO ()
 start [project] = do
-    w <- working
-    case w of
+    r <- getActiveProject
+    case r of
         Nothing     -> do
             time <- getZonedTime
-            file <- getDbFile True project
+            file <- getActiveProjectFile project
             putStrLn $ "Work on project " ++ project ++ " started at " ++ show time
-            writeFile file $ show (Running time) ++ "\n"
+            writeFile file $ show (Active time) ++ "\n"
         Just open   ->
             putStrLn $ "Focus! you are allready working on " ++ open
-
-logActivity :: String -> Activity -> IO ()
-logActivity p a = do
-    fileName <- getDbFile False p
-    appendFile fileName $ show a ++ "\n"
+start _ = printUsage "start"
 
 stop :: [String] -> IO ()
 stop [note] = do
-    w <- working
-    case w of
-        Just open   -> do
-            inFile  <- getDbFile True open
-            outFile <- getDbFile False open
-            content <- parseFile inFile
-            time    <- getZonedTime
-            let (active:_)      = content
-                Running from    = active
+    r <- getActiveProject
+    case r of
+        Just project -> do
+            inFile   <- getActiveProjectFile project
+            outFile  <- getProjectFile project
+            content  <- getActiveProjectContent' project
+            time     <- getZonedTime
+            let Active from     = content
                 updated         = (Finished from time note) in
                     appendFile outFile $ show updated ++ "\n"
             removeFile inFile
         Nothing     -> putStrLn "Working on nothing"
 stop [] = stop [""]
-
-
-parseFile :: FilePath -> IO [Activity]
-parseFile f = do
-    content <- readFile f
-    return $ map read (lines content)
+stop _  = printUsage "stop"
 
 status :: [String] -> IO ()
-status _ = do
-    wa <- getWorkingActivity
-    case wa of
-        Just (p,a)  -> do
+status [] = do
+    r <- getActiveProject
+    case r of
+        Just p  -> do
+            task <- getActiveProjectContent' p
             time <- getZonedTime
-            let Running from = a
-                duration     = diffZonedTime time from in
-                    putStrLn $ "You are working on " ++ p ++ " for " ++ show duration
-        Nothing     -> putStrLn "You are lazy bastard!"
-
-getProjectContent :: String -> IO [Activity]
-getProjectContent p = do
-    fileName    <- getDbFile False p
-    parseFile fileName
-
-
-getWorkingActivity :: IO (Maybe (String, Activity))
-getWorkingActivity = do
-    w <- working
-    case w of
-        Just open   -> do
-            filePath <- getDbFile True open
-            content <- parseFile filePath
-            return $ Just (open, head content)
-        Nothing     -> return Nothing
-
-working :: IO (Maybe String)
-working = do
-    db <- getDbDir
-    content <- getDirectoryContents db
-    let started = filter (\x -> head x == '_') content in
-        if started == []
-            then return Nothing
-            else return $ Just (tail $ head started)
-
-diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
-diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
-
-diffTimeToHours :: NominalDiffTime -> Float
-diffTimeToHours a = realToFrac a / 3600
+            let d = duration time task in
+                printf "You are working on %s for %0.1f h\n" p d
+        Nothing -> putStrLn "You are lazy bastard!"
+status _ = printUsage "status"
 
