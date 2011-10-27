@@ -2,6 +2,7 @@ import System.Environment
 import Data.Time
 import System.Directory
 import System.IO
+import Text.Printf
 
 import Report
 import Storage
@@ -32,7 +33,7 @@ main = do
         []          -> help []
         (cmd:rest)  ->
             let (Just action) = lookup cmd dispatch in
-                action args
+                action rest
 
 printUsage :: String -> IO ()
 printUsage cmd = do
@@ -49,13 +50,13 @@ help _ = do
 
 log' :: [String] -> IO ()
 log' [project, time, note] = do
-    logActivity project (Log (read time) note)
+    logActivity project (Logged (read time) note)
     putStrLn $ "Logged " ++ time ++ " h to project " ++ project
 log' [project, time] = log' [project, time, ""]
 
 logActivity :: String -> Task -> IO ()
 logActivity p a = do
-    fileName <- getProjectFile False p
+    fileName <- getProjectFile p
     appendFile fileName $ show a ++ "\n"
 
 start :: [String] -> IO ()
@@ -64,7 +65,7 @@ start [project] = do
     case r of
         Nothing     -> do
             time <- getZonedTime
-            file <- getProjectFile True project
+            file <- getActiveProjectFile project
             putStrLn $ "Work on project " ++ project ++ " started at " ++ show time
             writeFile file $ show (Active time) ++ "\n"
         Just open   ->
@@ -76,12 +77,11 @@ stop [note] = do
     r <- getActiveProject
     case r of
         Just project -> do
-            inFile   <- getProjectFile True project
-            outFile  <- getProjectFile False project
-            content  <- getProjectContent True project
+            inFile   <- getActiveProjectFile project
+            outFile  <- getProjectFile project
+            content  <- getActiveProjectContent' project
             time     <- getZonedTime
-            let (active:_)      = content
-                Active from     = active
+            let Active from     = content
                 updated         = (Finished from time note) in
                     appendFile outFile $ show updated ++ "\n"
             removeFile inFile
@@ -91,20 +91,13 @@ stop _  = printUsage "stop"
 
 status :: [String] -> IO ()
 status [] = do
-    r <- getActiveTask
+    r <- getActiveProject
     case r of
-        Just (project, task) -> do
+        Just p  -> do
+            task <- getActiveProjectContent' p
             time <- getZonedTime
-            let Active from  = task
-                duration     = diffZonedTime time from in
-                    putStrLn $ "You are working on " ++ project ++ " for " ++ show duration
-        Nothing     -> putStrLn "You are lazy bastard!"
+            let d = duration time task in
+                printf "You are working on %s for %0.1f h\n" p d
+        Nothing -> putStrLn "You are lazy bastard!"
 status _ = printUsage "status"
-
-
-diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
-diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
-
-diffTimeToHours :: NominalDiffTime -> Float
-diffTimeToHours a = realToFrac a / 3600
 

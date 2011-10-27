@@ -6,7 +6,7 @@ import Data.Time
 
 data Task = Active ZonedTime |
             Finished ZonedTime ZonedTime String |
-            Log Float String deriving (Read, Show)
+            Logged Float String deriving (Read, Show)
 
 getStorageDir :: IO FilePath
 getStorageDir = do
@@ -15,37 +15,62 @@ getStorageDir = do
         createDirectoryIfMissing True dir
         return dir
 
-getProjectFile :: Bool -> String -> IO FilePath
-getProjectFile a p = do
-    storage <- getStorageDir
-    if a
-        then return $ storage ++ "/_" ++ p
-        else return $ storage ++ "/" ++ p
+getProjectFile :: String -> IO FilePath
+getProjectFile p = do
+    dir <- getStorageDir
+    return $ dir ++ "/" ++ p
+
+getActiveProjectFile :: String -> IO FilePath
+getActiveProjectFile p = do
+    dir <- getStorageDir
+    return $ dir ++ "/_" ++ p
+
+
+getActiveProjectContent' :: String -> IO Task
+getActiveProjectContent' p = do
+    file    <- getActiveProjectFile p
+    content <- readFile file
+    return $ read $ head $ lines content
+
+getActiveProjectContent :: String -> IO (Maybe Task)
+getActiveProjectContent p = do
+    file        <- getActiveProjectFile p
+    fileExist   <- doesFileExist file
+    if fileExist
+        then do
+            content  <- readFile file
+            return (Just (read . head $ lines content))
+        else return Nothing
+
+getProjectContent' :: String -> IO [Task]
+getProjectContent' p = do
+    file    <- getProjectFile p
+    content <- readFile file
+    return $ map read (lines content)
+
+getProjectContent :: String -> IO (Maybe [Task])
+getProjectContent p = do
+    file        <- getProjectFile p
+    fileExist   <- doesFileExist file
+    if fileExist
+        then do
+            content  <- readFile file
+            return (Just (map read (lines content)))
+        else return Nothing
 
 getActiveProject :: IO (Maybe String)
 getActiveProject = do
-    storage <- getStorageDir
-    content <- getDirectoryContents storage
-    let active = filter (\x -> head x == '_') content in
+    dir         <- getStorageDir
+    contents    <- getDirectoryContents dir
+    let active = filter (\x -> head x == '_') contents in
         if active == []
             then return Nothing
             else return $ Just (tail $ head active)
 
-getProjectContent :: Bool -> String -> IO [Task]
-getProjectContent active project = do
-    projectFile <- getProjectFile active project
-    fileExist   <- doesFileExist projectFile
-    content     <- readFile projectFile
-    return $ map read (lines content)
-
-getActiveTask :: IO (Maybe (String, Task))
-getActiveTask = do
-    active <- getActiveProject
-    case active of
-        Just project    -> do
-            (task:rest) <- getProjectContent True project
-            return $ Just (project, task)
-        Nothing         -> return Nothing
+isProjectActive' :: String -> IO Bool
+isProjectActive' p = do
+    file        <- getActiveProjectFile p
+    doesFileExist file
 
 getProjectList :: IO [String]
 getProjectList = do

@@ -1,31 +1,50 @@
-module Report (report) where
+module Report where
+
+import Storage
+import Text.Printf
+import Data.Time
 
 report :: [String] -> IO ()
-report a = do
-    putStrLn "This is a new report."
+report []  = do
+    projects    <- getProjectList
+    totals      <- mapM projectSummary' projects
+    putStrLn "------------------------"
+    printf "Total           %5.1f h\n" (sum totals)
+report [p] = do
+    content <- getProjectContent p
+    time <- getZonedTime
+    return ()
 
--- report' :: [String] -> IO ()
--- report' [] = do
---     db <- getDbDir
---     content <- getDirectoryContents db
---     let filtered = filter (\x -> head x `elem` ['a'..'z']) content in
---         reportAux filtered
+projectSummary' :: String -> IO Float
+projectSummary' p = do
+    content <- getProjectContent' p
+    active  <- isProjectActive' p
+    time    <- getZonedTime
+    let name    = iif active ("*" ++ p) p
+        total   = sum $ map (duration time) content in do
+            printf "%-15s %5.1f h\n" name total
+            return total
 
--- reportAux (x:xs) = do
---     total <- getTotal x
---     putStrLn $ x ++ "    " ++ show total ++ " h"
---     reportAux xs
--- reportAux [] = return ()
---
--- getTotal :: String -> IO Float
--- getTotal p = do
---     content     <- getProjectContent p
---     return $ total content
---
--- total :: [Activity] -> Float
--- total [] = 0.0
--- total (x:xs) = duration + total xs
---     where duration = case x of
---                         Finished from to _  -> diffTimeToHours (diffZonedTime to from)
---                         Log d _             -> d
+getProjectDuration' :: String -> IO Float
+getProjectDuration' p = do
+    content <- getProjectContent p
+    return 0.1
+
+diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
+diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
+
+duration :: ZonedTime -> Task -> Float
+duration _ (Logged d _)     = d
+duration b (Active a)       = (realToFrac $ diffZonedTime b a) / 3600
+duration _ (Finished a b _) = (realToFrac $ diffZonedTime b a) / 3600
+
+iif :: Bool -> a -> a -> a
+iif a b c
+    | a         = b
+    | otherwise = c
+
+mark s = map aux
+    where aux x = if x == s
+                    then "*" ++ s
+                    else x
 
