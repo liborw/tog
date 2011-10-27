@@ -4,6 +4,7 @@ import System.Directory
 import System.IO
 import Text.Printf
 import System.Cmd
+import System.Exit
 
 import Report
 import Storage
@@ -48,7 +49,11 @@ edit :: [String] -> IO ()
 edit [p]    = do
     file    <- getProjectFile p
     editor  <- getEnv "EDITOR"
-    ret     <- rawSystem editor [file]
+    r       <- rawSystem editor [file]
+    case r of
+        ExitSuccess     -> return ()
+        ExitFailure c   -> printf
+            "Command '%s %s' failed with return code %d.\n" editor file c
 edit _      = printUsage "edit"
 
 help :: [String] -> IO ()
