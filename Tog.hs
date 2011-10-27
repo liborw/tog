@@ -3,6 +3,8 @@ import Data.Time
 import System.Directory
 import System.IO
 import Text.Printf
+import System.Cmd
+import System.Exit
 
 import Report
 import Storage
@@ -14,7 +16,8 @@ dispatch = [
             ("status", status),
             ("log", log'),
             ("report", report),
-            ("help", help)
+            ("help", help),
+            ("edit", edit)
            ]
 
 
@@ -24,7 +27,8 @@ usages = [
          ("stop", "[note]"),
          ("log", "<project> <hours> [note]"),
          ("status", ""),
-         ("report", "")
+         ("report", ""),
+         ("edit", "<project>")
          ]
 
 main = do
@@ -40,6 +44,17 @@ printUsage cmd = do
     prog <- getProgName
     let (Just usage) = lookup cmd usages in
         putStrLn $ unwords ["Usage:", prog, cmd, usage]
+
+edit :: [String] -> IO ()
+edit [p]    = do
+    file    <- getProjectFile p
+    editor  <- getEnv "EDITOR"
+    r       <- rawSystem editor [file]
+    case r of
+        ExitSuccess     -> return ()
+        ExitFailure c   -> printf
+            "Command '%s %s' failed with return code %d.\n" editor file c
+edit _      = printUsage "edit"
 
 help :: [String] -> IO ()
 help _ = do
