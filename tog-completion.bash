@@ -2,7 +2,7 @@
 _tog_complete () {
     local cur="${COMP_WORDS[COMP_CWORD]}"
     local commands="start stop status log report edit"
-    local projects=$(\ls ~/.tog/[a-z]*)
+    local projects=( $( for i in $(ls ~/.tog) ; do echo $i ; done | grep ^[a-z] ) )
 
     # Subcommand list
     [[ ${COMP_CWORD} -eq 1 ]] && {
@@ -17,6 +17,23 @@ _tog_complete () {
         prev_index=$((++prev_index))
         prev="${COMP_WORDS[prev_index]}"
     done
+
+    # Find the number of non-"--" commands
+    local num=0
+    for word in ${COMP_WORDS[@]}
+    do
+        if [[ $word != -* ]]; then
+            num=$((++num))
+        fi
+    done
+
+
+    case "$prev" in
+        start|log|edit)
+            COMPREPLY=( $(compgen -W  "`echo ${projects[@]}`" -- ${cur}) )
+            return
+            ;;
+    esac
 }
 
-complete -o bashdefault -o default -F _tog_complete tog
+complete -F _tog_complete tog
