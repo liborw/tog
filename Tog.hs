@@ -81,7 +81,7 @@ start [project] = do
         Nothing     -> do
             time <- getZonedTime
             file <- getActiveProjectFile project
-            putStrLn $ "Work on project " ++ project ++ " started at " ++ show time
+            printStart project time
             writeFile file $ show (Active time) ++ "\n"
         Just open   ->
             putStrLn $ "Focus! you are allready working on " ++ open
@@ -96,6 +96,7 @@ stop [note] = do
             outFile  <- getProjectFile project
             content  <- getActiveProjectContent' project
             time     <- getZonedTime
+            printStop project time content
             let Active from     = content
                 updated         = (Finished from time note) in
                     appendFile outFile $ show updated ++ "\n"
@@ -111,8 +112,7 @@ status [] = do
         Just p  -> do
             task <- getActiveProjectContent' p
             time <- getZonedTime
-            let d = duration time task in
-                printf "You are working on %s for %0.1f h\n" p d
+            printStatus p time task
         Nothing -> putStrLn "You are lazy bastard!"
 status _ = printUsage "status"
 

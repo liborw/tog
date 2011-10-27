@@ -1,5 +1,7 @@
 module Report where
 
+import Text.PrettyPrint.ANSI.Leijen
+import System.Locale
 import Storage
 import Text.Printf
 import Data.Time
@@ -48,3 +50,36 @@ mark s = map aux
                     then "*" ++ s
                     else x
 
+formatTime' :: (FormatTime t) => t -> String
+formatTime' = formatTime defaultTimeLocale "%R on %d %b %Y"
+
+-- starting work on *project*
+--   at 16:35 on 07 Feb 2011
+printStart :: (FormatTime t) => String -> t -> IO ()
+printStart p t = do
+    putDoc $ nest 4 ( text "starting work on" <+> bold (text p)
+             <$> text "at" <+> (text $ formatTime' t)) <> linebreak
+
+-- working on *project*
+--     form    16:35 on 07 Feb 2011
+--     to now, 17:20 on 07 Feb 2011
+--          => 1.5 h have elapsed
+printStatus :: String -> ZonedTime -> Task -> IO ()
+printStatus p t  task@(Active f) = do
+    putDoc $ nest 4 ( text "working on" <+> bold (text p)
+                    <$> text "from   " <+> (text $ formatTime' f)
+                    <$> text "to now," <+> (text $ formatTime' t)
+                    <$> indent 4 (red (text "==>"
+                    <+> text (printf "%0.1f h" (duration t task))
+                    <+> text "have elapsed")))
+    putDoc linebreak
+
+printStop :: String -> ZonedTime -> Task -> IO ()
+printStop p t  task@(Active f) = do
+    putDoc $ nest 4 ( text "worked on" <+> bold (text p)
+                    <$> text "from   " <+> (text $ formatTime' f)
+                    <$> text "to now," <+> (text $ formatTime' t)
+                    <$> indent 4 (red (text "==>"
+                    <+> text (printf "%0.1f h" (duration t task))
+                    <+> text "elapsed")))
+    putDoc linebreak
