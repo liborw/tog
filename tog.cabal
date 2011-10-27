@@ -10,4 +10,4 @@ Cabal-Version:      >=1.2
 
 Executable tog
     Main-is:        Tog.hs
-    Build-Depends:  base >= 3,directory, time
+    Build-Depends:  base >= 3,directory, time, process
