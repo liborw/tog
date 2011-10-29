@@ -83,3 +83,15 @@ printStop p t  task@(Active f) = do
                     <+> text (printf "%0.1f h" (duration t task))
                     <+> text "elapsed")))
     putDoc linebreak
+
+sameDay :: ZonedTime -> ZonedTime -> Bool
+sameDay a b = (date a) == (date b)
+    where date = formatTime defaultTimeLocale "%F"
+
+sameWeak :: ZonedTime -> ZonedTime -> Bool
+sameWeak a b = (weak a) == (weak b)
+    where weak = formatTime defaultTimeLocale "%W-%Y"
+
+sameMonth :: ZonedTime -> ZonedTime -> Bool
+sameMonth a b = (month a) == (month b)
+    where month = formatTime defaultTimeLocale "%d-%Y"
