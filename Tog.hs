@@ -67,7 +67,7 @@ log' :: [String] -> IO ()
 log' [project, hours, note] = do
     time <- getZonedTime
     logActivity project (Logged time (read hours) note)
-    putStrLn $ "Logged " ++ time ++ " h to project " ++ project
+    putStrLn $ "Logged " ++ hours ++ " h to project " ++ project
 log' [project, hours] = log' [project, hours, ""]
 log' _ = printUsage "log"
 

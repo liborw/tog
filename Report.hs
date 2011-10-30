@@ -9,23 +9,39 @@ import Data.Time
 report :: [String] -> IO ()
 report []  = do
     projects    <- getProjectList
+    putStrLn "Project       this day     weak    month    total"
+    putStrLn "---------------------------------------------------"
     totals      <- mapM projectSummary' projects
-    putStrLn "------------------------"
-    printf "Total           %5.1f h\n" (sum totals)
+    putStrLn "---------------------------------------------------"
+    let   (today, weak, month, total) = foldl
+                                        (\(a1,b1,c1,d1) (a2,b2,c2,d2)
+                                            -> (a1 + a2, b1 + b2, c1 + c2, d1 + d2))
+                                        (0, 0, 0, 0) totals in
+        printf   "Total            %5.1f h  %5.1f h  %5.1f h  %5.1f h\n"
+            today weak month total
 report [p] = do
     content <- getProjectContent p
     time <- getZonedTime
     return ()
 
-projectSummary' :: String -> IO Float
+projectSummary' :: String -> IO (Float, Float, Float, Float)
 projectSummary' p = do
     content <- getProjectContent' p
     active  <- isProjectActive' p
     time    <- getZonedTime
-    let name    = iif active ("*" ++ p) p
-        total   = sum $ map (duration time) content in do
-            printf "%-15s %5.1f h\n" name total
-            return total
+    let name                                = iif active ("*" ++ p) p
+        (today, thisWeak, thisMonth, total) = timeSummary time content in do
+            printf "%-15s  %5.1f h  %5.1f h  %5.1f h  %5.1f h\n"
+                name today thisWeak thisMonth total
+            return (today, thisWeak, thisMonth, total)
+
+timeSummary :: ZonedTime -> [Task] -> (Float, Float, Float, Float)
+timeSummary time tasks =
+    let today     = sum $ map (duration time) (filter ((sameDay time) . from) tasks)
+        thisWeak  = sum $ map (duration time) (filter ((sameWeak time) . from) tasks)
+        thisMonth = sum $ map (duration time) (filter ((sameMonth time) . from) tasks)
+        total     = sum $ map (duration time) tasks
+        in (today, thisWeak, thisMonth, total)
 
 getProjectDuration' :: String -> IO Float
 getProjectDuration' p = do
@@ -36,7 +52,7 @@ diffZonedTime :: ZonedTime -> ZonedTime -> NominalDiffTime
 diffZonedTime a b = diffUTCTime (zonedTimeToUTC a) (zonedTimeToUTC b)
 
 duration :: ZonedTime -> Task -> Float
-duration _ (Logged d _)     = d
+duration _ (Logged _ d _)   = d
 duration b (Active a)       = (realToFrac $ diffZonedTime b a) / 3600
 duration _ (Finished a b _) = (realToFrac $ diffZonedTime b a) / 3600
 
@@ -94,4 +110,4 @@ sameWeak a b = (weak a) == (weak b)
 
 sameMonth :: ZonedTime -> ZonedTime -> Bool
 sameMonth a b = (month a) == (month b)
-    where month = formatTime defaultTimeLocale "%d-%Y"
+    where month = formatTime defaultTimeLocale "%m-%Y"
