@@ -64,10 +64,12 @@ help _ = do
     putStr $ unlines $ map (\(x,y) -> "  " ++ unwords [x,y]) usages
 
 log' :: [String] -> IO ()
-log' [project, time, note] = do
-    logActivity project (Logged (read time) note)
-    putStrLn $ "Logged " ++ time ++ " h to project " ++ project
-log' [project, time] = log' [project, time, ""]
+log' [project, hours, note] = do
+    time <- getZonedTime
+    logActivity project (Logged time (read hours) note)
+    putStrLn $ "Logged " ++ hours ++ " h to project " ++ project
+log' [project, hours] = log' [project, hours, ""]
+log' _ = printUsage "log"
 
 logActivity :: String -> Task -> IO ()
 logActivity p a = do
@@ -81,7 +83,7 @@ start [project] = do
         Nothing     -> do
             time <- getZonedTime
             file <- getActiveProjectFile project
-            putStrLn $ "Work on project " ++ project ++ " started at " ++ show time
+            printStart project time
             writeFile file $ show (Active time) ++ "\n"
         Just open   ->
             putStrLn $ "Focus! you are allready working on " ++ open
@@ -96,6 +98,7 @@ stop [note] = do
             outFile  <- getProjectFile project
             content  <- getActiveProjectContent' project
             time     <- getZonedTime
+            printStop project time content
             let Active from     = content
                 updated         = (Finished from time note) in
                     appendFile outFile $ show updated ++ "\n"
@@ -111,8 +114,7 @@ status [] = do
         Just p  -> do
             task <- getActiveProjectContent' p
             time <- getZonedTime
-            let d = duration time task in
-                printf "You are working on %s for %0.1f h\n" p d
+            printStatus p time task
         Nothing -> putStrLn "You are lazy bastard!"
 status _ = printUsage "status"
 
