@@ -1,5 +1,5 @@
 Name:               tog
-Version:            0.4
+Version:            0.5
 Description:        Simple command line time tracking utility.
 License:            BSD2
 License-file:       LICENSE
@@ -10,4 +10,4 @@ Cabal-Version:      >=1.2
 
 Executable tog
     Main-is:        Tog.hs
-    Build-Depends:  base >= 3,directory, time, process
+    Build-Depends:  base >= 3,directory, time, process, ansi-wl-pprint

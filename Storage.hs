@@ -6,7 +6,12 @@ import Data.Time
 
 data Task = Active ZonedTime |
             Finished ZonedTime ZonedTime String |
-            Logged Float String deriving (Read, Show)
+            Logged ZonedTime Float String deriving (Read, Show)
+
+from :: Task -> ZonedTime
+from (Active t)         = t
+from (Finished t _ _)   = t
+from (Logged t _ _)     = t
 
 getStorageDir :: IO FilePath
 getStorageDir = do
