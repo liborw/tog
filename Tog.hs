@@ -64,10 +64,12 @@ help _ = do
     putStr $ unlines $ map (\(x,y) -> "  " ++ unwords [x,y]) usages
 
 log' :: [String] -> IO ()
-log' [project, time, note] = do
-    logActivity project (Logged (read time) note)
+log' [project, hours, note] = do
+    time <- getZonedTime
+    logActivity project (Logged time (read hours) note)
     putStrLn $ "Logged " ++ time ++ " h to project " ++ project
-log' [project, time] = log' [project, time, ""]
+log' [project, hours] = log' [project, hours, ""]
+log' _ = printUsage "log"
 
 logActivity :: String -> Task -> IO ()
 logActivity p a = do
